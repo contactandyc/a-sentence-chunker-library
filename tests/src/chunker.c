@@ -48,11 +48,100 @@ static void print_with_escaped_newlines(const char *str) {
 }
 
 
+// Normalize Gutenberg-style line breaks:
+// - collapse single '\n' into space
+// - preserve double '\n\n' as real paragraph breaks
+static char *normalize_newlines(const char *text) {
+    size_t len = strlen(text);
+    char *out = malloc(len * 2 + 1); // safe upper bound
+    if (!out) return NULL;
+
+    size_t j = 0;
+    for (size_t i = 0; i < len; i++) {
+        if (text[i] == '\n') {
+            if (i + 1 < len && text[i+1] == '\n') {
+                // true paragraph break → keep as double newline
+                out[j++] = '\n';
+                out[j++] = '\n';
+                i++; // skip the second \n
+            } else {
+                // mid-paragraph line break → space
+                out[j++] = ' ';
+            }
+        } else {
+            out[j++] = text[i];
+        }
+    }
+
+    out[j] = '\0';
+    return out;
+}
+
+static void process_non_json_file(const char *filename) {
+    size_t length = 0;
+    char *content = read_file(filename, &length);
+    if (!content) {
+        fprintf(stderr, "Could not read file: %s\n", filename);
+        return;
+    }
+
+    // --- NEW: normalize before chunking ---
+    char *normalized = normalize_newlines(content);
+    free(content);
+    if (!normalized) {
+        fprintf(stderr, "Memory error while normalizing file: %s\n", filename);
+        return;
+    }
+
+    // Create buffers for sentence chunking
+    aml_buffer_t *bh1 = aml_buffer_init(32);
+    aml_buffer_t *bh2 = aml_buffer_init(32);
+
+    // First pass
+    size_t num_first_chunks = 0;
+    a_sentence_chunk_t *first_chunks = a_sentence_chunker(&num_first_chunks, bh1, normalized);
+
+    // Second pass (enforces min/max length, etc.)
+    size_t num_chunks = 0;
+    a_sentence_chunk_t *chunks = a_rechunk_sentences(
+        &num_chunks,
+        bh2,
+        normalized,
+        first_chunks,
+        num_first_chunks,
+        5,    // min_length
+        1000   // max_length
+    );
+
+    // Print each sentence on its own line
+    for (size_t i = 0; i < num_chunks; i++) {
+        a_sentence_chunk_t *c = &chunks[i];
+        size_t off = c->start_offset;
+        size_t ln = c->length;
+        size_t norm_len = strlen(normalized);
+
+        if (off + ln > norm_len) {
+            ln = (off < norm_len) ? (norm_len - off) : 0;
+        }
+
+        char *sentence = malloc(ln + 1);
+        memcpy(sentence, normalized + off, ln);
+        sentence[ln] = '\0';
+
+        printf("[%zu] %s\n", i, sentence);
+        free(sentence);
+    }
+
+    aml_buffer_destroy(bh1);
+    aml_buffer_destroy(bh2);
+    free(normalized);
+}
+
 // ------------------------------------------------------------------
 // Process a NON-json file: read its contents, chunk into sentences,
 // and print each sentence on its own line.
 // ------------------------------------------------------------------
-static void process_non_json_file(const char *filename) {
+static void process_non_json_file_old(const char *filename) {
     size_t length = 0;
     char *content = read_file(filename, &length);
     if (!content) {
@@ -76,7 +165,7 @@ static void process_non_json_file(const char *filename) {
         first_chunks,
         num_first_chunks,
         5,    // min_length
-        250   // max_length
+        1000   // max_length
     );
 
     // Print each sentence on its own line
@@ -177,20 +266,22 @@ static void process_json_file(const char *json_file) {
         aml_buffer_t *bh1 = aml_buffer_init(32);
         aml_buffer_t *bh2 = aml_buffer_init(32);
 
+        char *normalized = normalize_newlines(source_text);
+
         // First-pass sentence chunking
         size_t num_first_chunks = 0;
-        a_sentence_chunk_t *first_chunks = a_sentence_chunker(&num_first_chunks, bh1, source_text);
+        a_sentence_chunk_t *first_chunks = a_sentence_chunker(&num_first_chunks, bh1, normalized);
 
         // Second-pass re-chunking (if needed)
         size_t num_chunks = 0;
         a_sentence_chunk_t *chunks = a_rechunk_sentences(
             &num_chunks,
             bh2,
-            source_text,
+            normalized,
             first_chunks,
             num_first_chunks,
             5,       // min_length
-            200      // max_length
+            1000      // max_length
         );
 
         // =========================
@@ -207,14 +298,14 @@ static void process_json_file(const char *json_file) {
                 a_sentence_chunk_t *c = &chunks[j];
                 size_t off = c->start_offset;
                 size_t ln = c->length;
-                size_t source_len = strlen(source_text);
+                size_t source_len = strlen(normalized);
 
                 // Ensure we don't go out of bounds
                 if (off + ln > source_len) {
                     ln = (off < source_len) ? (source_len - off) : 0;
                 }
                 char *s = malloc(ln + 1);
-                memcpy(s, source_text + off, ln);
+                memcpy(s, normalized + off, ln);
                 s[ln] = '\0';
                 actual_sentences[j] = s;
             }
@@ -266,6 +357,7 @@ static void process_json_file(const char *json_file) {
             }
             free(actual_sentences);
         }
+        free(normalized);
         aml_buffer_destroy(bh1);
         aml_buffer_destroy(bh2);
         free(expected_sentences);

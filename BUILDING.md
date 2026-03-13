@@ -78,6 +78,19 @@ rm -rf the-macro-library
 ```
 
 
+### a-json-library
+
+Clone & build:
+
+```bash
+git clone --depth 1 "https://github.com/contactandyc/a-json-library.git" "a-json-library"
+cd a-json-library
+./build.sh install
+cd ..
+rm -rf a-json-library
+```
+
+
 ### ZLIB
 
 Install via package manager:
@@ -189,6 +202,14 @@ RUN set -eux; \
   ./build.sh install && \
   cd .. && \
   rm -rf the-macro-library
+
+# --- Build & install a-json-library ---
+RUN set -eux; \
+  git clone --depth 1 "https://github.com/contactandyc/a-json-library.git" "a-json-library" && \
+  cd a-json-library && \
+  ./build.sh install && \
+  cd .. && \
+  rm -rf a-json-library
 
 # --- Build & install the-io-library ---
 RUN set -eux; \

@@ -17,6 +17,47 @@ find_library(M_LIB m)
 
 # ---- Test executables ----
 set(TEST_EXECUTABLES "")
+add_executable(chunker  src/chunker.c)
+
+list(APPEND TEST_EXECUTABLES chunker)
+
+set_target_properties(chunker PROPERTIES
+  C_STANDARD 23
+  C_STANDARD_REQUIRED YES
+)
+if("CXX" IN_LIST CMAKE_PROJECT_LANGUAGES)
+  set_target_properties(chunker PROPERTIES
+    CXX_STANDARD 17
+    CXX_STANDARD_REQUIRED YES
+  )
+endif()
+
+if(NOT TARGET a_sentence_chunker_library::a_sentence_chunker_library)
+  find_package(a_sentence_chunker_library CONFIG REQUIRED)
+endif()
+target_link_libraries(chunker PRIVATE a_sentence_chunker_library::a_sentence_chunker_library)
+
+if(M_LIB)
+  target_link_libraries(chunker PRIVATE ${M_LIB})
+endif()
+
+if(MSVC)
+  target_compile_options(chunker PRIVATE /W4)
+else()
+  target_compile_options(chunker PRIVATE -Wall -Wextra -Wpedantic)
+endif()
+
+if(A_ENABLE_COVERAGE)
+  if (CMAKE_C_COMPILER_ID MATCHES "Clang")
+    target_compile_options(chunker PRIVATE -O0 -g -fprofile-instr-generate -fcoverage-mapping)
+    target_link_options(chunker PRIVATE -fprofile-instr-generate -fcoverage-mapping)
+  elseif (CMAKE_C_COMPILER_ID STREQUAL "GNU")
+    target_compile_options(chunker PRIVATE -O0 -g --coverage)
+    target_link_options(chunker PRIVATE --coverage)
+  endif()
+endif()
+
+add_test(NAME chunker COMMAND $<TARGET_FILE:chunker>)
 
 enable_testing()
 

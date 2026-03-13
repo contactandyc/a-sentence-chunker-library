@@ -18,25 +18,13 @@ static inline bool is_sentence_punct(char c) {
     return (c == '.' || c == '?' || c == '!');
 }
 
-/* Some known abbreviations to skip. Expand as desired. */
 static const char * ABBREVS[] = {
-    "Mr",       // Mister
-    "Mrs",      // Mistress
-    "Ms",       // (Generic title)
-    "Dr",       // Doctor
-    "St",       // Street or Saint
-    "etc",      // Etcetera
-    "i.e",      // id est
-    "e.g",      // exempli gratia
-    "vs",       // versus
-    "Inc",      // Incorporated
-    "Corp",     // Corporation
-    "Ltd",      // Limited
-    "Co",       // Company
-    "Jr",       // Junior
-    "Sr",       // Senior
-    "Ph.D",     // Doctor of Philosophy
-    NULL
+  "Mr","Mrs","Ms","Dr","St","etc","i.e","e.g","vs","Inc","Corp","Ltd","Co",
+  "Jr","Sr","Ph.D",
+  // Add these:
+  "U.S","U.K","No","Nos","Fig","Figs","Sec","Art","Vol","Vols","Ch","Chap","pp","p",
+  "Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Sept","Oct","Nov","Dec",
+  NULL
 };
 
 static bool is_whitespace(char c) {
@@ -126,25 +114,24 @@ static bool is_just_digits(const char *text, size_t start, size_t i) {
 static bool is_end_of_sentence_heuristic(const char *text, size_t i, size_t len) {
     char c = text[i];
 
-    // 1) Skip decimals: If '.' is between two digits => "3.14"
+    // 1) Skip decimals: "3.14"
     if (c == '.' && i > 0 && i < len - 1) {
         if (isdigit((unsigned char)text[i-1]) && isdigit((unsigned char)text[i+1])) {
             return false;
         }
     }
 
-    // 2) Skip known abbreviations: "Mr.", "Dr."
+    // 2) Skip known abbreviations: "Mr.", "Dr.", "e.g.", etc.
     if (c == '.') {
         if (matches_abbreviation(text, i)) {
             return false;
         }
     }
 
-    // 3) Ordinal lists: "1.", "2."
-    //    If substring before '.' is digits only, and
-    //    next non-whitespace is digit or lowercase => skip
+    // 3) Ordinal / list markers: "1.", "2."
+    //    If the token before '.' is digits only, never split here.
     if (c == '.') {
-        // find start of word
+        // find start of token before the dot
         size_t word_start = i;
         while (word_start > 0 &&
                !is_whitespace(text[word_start - 1]) &&
@@ -152,22 +139,25 @@ static bool is_end_of_sentence_heuristic(const char *text, size_t i, size_t len)
         {
             word_start--;
         }
+
+        // 3a) Pure digits before the dot -> not an EOS (e.g., "1.")
         if (is_just_digits(text, word_start, i)) {
-            size_t j = skip_spaces(text, i + 1, len);
-            if (j >= len) {
-                // end of text => not a real separate sentence
-                return false;
-            }
-            if (isdigit((unsigned char)text[j]) ||
-                islower((unsigned char)text[j]))
-            {
-                // e.g. "1. 2" or "1. next"
-                return false;
-            }
+            return false;
+        }
+
+        // 3b) Single-letter token before the dot -> not an EOS (e.g., "a." / "B.")
+        size_t tok_len = i - word_start;
+        if (tok_len == 1 && isalpha((unsigned char)text[word_start])) {
+            return false;
         }
     }
 
-    // If we get here, treat '.' or '?' or '!' as a real boundary.
+    // Don’t treat period before a closing bracket as a sentence end
+    if (c == '.' && i + 1 < len && text[i+1] == ']') {
+        return false;
+    }
+
+    // If we get here, treat '.', '?', '!' as a real boundary.
     return true;
 }
 
@@ -435,6 +425,15 @@ size_t find_split_point(const char *text, size_t start_offset, size_t length,
                     }
                 }
             }
+        }
+    }
+
+    for (size_t k = search_end; k > search_start; k--) {
+        unsigned char ch = (unsigned char)text[k];
+        if (ch == ';' || ch == ':') {
+            size_t adjusted = adjust_for_token_boundary(text, start_offset, end_offset, k);
+            if (adjusted > start_offset && adjusted < end_offset) return adjusted;
+            else return end_offset;
         }
     }
 

@@ -85,6 +85,14 @@ RUN set -eux; \
   cd .. && \
   rm -rf the-macro-library
 
+# --- Build & install a-json-library ---
+RUN set -eux; \
+  git clone --depth 1 "https://github.com/contactandyc/a-json-library.git" "a-json-library" && \
+  cd a-json-library && \
+  ./build.sh install && \
+  cd .. && \
+  rm -rf a-json-library
+
 # --- Build & install the-io-library ---
 RUN set -eux; \
   git clone --depth 1 "https://github.com/contactandyc/the-io-library.git" "the-io-library" && \
