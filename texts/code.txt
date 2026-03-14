@@ -1,0 +1,119 @@
+Great idea. Add a `show: true/false` flag per message instead of dropping them. Here’s a drop-in that decides visibility and keeps everything:
+
+````python
+#!/usr/bin/env python3
+import json, uuid, sys, re
+
+def sort_key(m):
+    t = m.get("create_time")
+    ts = float(t) if isinstance(t, (int, float)) else 0.0
+    return (ts, m.get("id") or "")
+
+_action_re = re.compile(r'^\s*[A-Za-z_][\w\.]*\s*\(')
+
+def extract_text(msg):
+    author = msg.get("author") or {}
+    role = author.get("role")
+    tool_name = author.get("name")
+    content = msg.get("content") or {}
+    ctype = content.get("content_type")
+
+    if role == "tool":
+        if tool_name == "web.run":
+            groups = (msg.get("metadata") or {}).get("search_result_groups") or []
+            lines = []
+            for g in groups:
+                for e in g.get("entries", []) or []:
+                    title = e.get("title") or "(no title)"
+                    url = e.get("url") or ""
+                    snip = re.sub(r"\s+", " ", (e.get("snippet") or "")).strip()
+                    lines.append(f"- {title} ({url}) — {snip}")
+            return "Search results:\n" + "\n".join(lines) if lines else ""
+        return ""  # unknown tool → no visible text by default
+
+    if ctype == "text":
+        parts = content.get("parts")
+        if isinstance(parts, list):
+            return "\n".join(str(p) for p in parts if p)  # may be ""
+        return content.get("text", "")
+
+    if ctype == "code":
+        text = content.get("text", "")
+        lang = (content.get("language") or "").strip().lower()
+        if not lang or lang == "unknown":
+            return text  # treat as plain text; might be an action like search("...")
+        return f"```{lang}\n{text}\n```"
+
+    if ctype == "user_editable_context":
+        return content.get("user_instructions", "")
+
+    return content.get("text", "") or ""  # safe fallback
+
+def decide_show(msg, text):
+    author = msg.get("author") or {}
+    role = author.get("role")
+    tool_name = author.get("name")
+    meta = msg.get("metadata") or {}
+    content = msg.get("content") or {}
+    ctype = content.get("content_type")
+
+    # Hide scaffolding
+    if meta.get("is_visually_hidden_from_conversation"): return False
+    if meta.get("is_contextual_answers_system_message"): return False
+
+    # System
+    if role == "system":
+        return bool(text.strip())  # only show if non-empty
+
+    # Tool
+    if role == "tool":
+        if tool_name == "web.run":
+            return bool(text.strip())  # show only if we rendered results
+        return False  # other tools hidden by default
+
+    # Code "actions" like search("...") — hide unless you want to see them
+    if ctype == "code":
+        t = content.get("text", "")
+        if _action_re.match((t or "").strip()):
+            return False
+
+    # User context/preferences
+    if ctype == "user_editable_context":
+        return False
+
+    # Default: show if there’s visible text
+    return bool((text or "").strip())
+
+def main(path):
+    data = json.load(open(path))
+    convs = data if isinstance(data, list) else data.get("conversations", [])
+    out = []
+    for conv in convs:
+        chat = {"id": str(uuid.uuid4()), "title": conv.get("title") or "Untitled", "messages": []}
+        nodes = [n["message"] for n in (conv.get("mapping") or {}).values() if n.get("message")]
+        nodes.sort(key=sort_key)
+        for msg in nodes:
+            text = extract_text(msg)
+            show = decide_show(msg, text)
+            role = (msg.get("author") or {}).get("role") or "assistant"
+            chat["messages"].append({
+                "id": str(uuid.uuid4()),
+                "role": role,
+                "content": text,
+                "show": show
+            })
+        out.append(chat)
+    json.dump(out, sys.stdout, indent=2)
+
+if __name__ == "__main__":
+    main(sys.argv[1])
+````
+
+### Rules this uses (quickly):
+
+* Hidden/system scaffolding → `show: false`.
+* `web.run` → render results; `show: true` if any, else false.
+* Other tools → `show: false` by default (easy to relax later).
+* Code with `language: unknown` → treated as plain text; if it looks like an action (`foo(...)`), `show: false`.
+* User context (`user_editable_context`) → `show: false`.
+* Everything else → `show: true` iff non-empty text.
