@@ -45,8 +45,8 @@ endif()
 include(GNUInstallDirs)
 
 # ---- Dependencies (Standard CMake) ----
-find_package(a_memory_library CONFIG REQUIRED)
 find_package(the_macro_library CONFIG REQUIRED)
+find_package(a_memory_library CONFIG REQUIRED)
 find_package(the_io_library CONFIG REQUIRED)
 find_package(a_json_library CONFIG REQUIRED)
 
@@ -74,7 +74,7 @@ if("CXX" IN_LIST CMAKE_PROJECT_LANGUAGES)
 endif()
 
 # Link deps once
-target_link_libraries(a_sentence_chunker_library_debug PUBLIC  a_memory_library::a_memory_library  the_macro_library::the_macro_library  the_io_library::the_io_library  a_json_library::a_json_library)
+target_link_libraries(a_sentence_chunker_library_debug PUBLIC  the_macro_library::the_macro_library  a_memory_library::a_memory_library  the_io_library::the_io_library  a_json_library::a_json_library)
 
 # Per-variant optimization flavor
 target_compile_options(a_sentence_chunker_library_debug PRIVATE ${_A_DEBUG_OPTS})
@@ -108,7 +108,7 @@ if("CXX" IN_LIST CMAKE_PROJECT_LANGUAGES)
 endif()
 
 # Link deps once
-target_link_libraries(a_sentence_chunker_library_memory PUBLIC  a_memory_library::a_memory_library  the_macro_library::the_macro_library  the_io_library::the_io_library  a_json_library::a_json_library)
+target_link_libraries(a_sentence_chunker_library_memory PUBLIC  the_macro_library::the_macro_library  a_memory_library::a_memory_library  the_io_library::the_io_library  a_json_library::a_json_library)
 
 # Per-variant optimization flavor
 target_compile_options(a_sentence_chunker_library_memory PRIVATE ${_A_DEBUG_OPTS})
@@ -145,7 +145,7 @@ if("CXX" IN_LIST CMAKE_PROJECT_LANGUAGES)
 endif()
 
 # Link deps once
-target_link_libraries(a_sentence_chunker_library_static PUBLIC  a_memory_library::a_memory_library  the_macro_library::the_macro_library  the_io_library::the_io_library  a_json_library::a_json_library)
+target_link_libraries(a_sentence_chunker_library_static PUBLIC  the_macro_library::the_macro_library  a_memory_library::a_memory_library  the_io_library::the_io_library  a_json_library::a_json_library)
 
 # Per-variant optimization flavor
 target_compile_options(a_sentence_chunker_library_static PRIVATE ${_A_RELEASE_OPTS})
@@ -179,7 +179,7 @@ if("CXX" IN_LIST CMAKE_PROJECT_LANGUAGES)
 endif()
 
 # Link deps once
-target_link_libraries(a_sentence_chunker_library_shared PUBLIC  a_memory_library::a_memory_library  the_macro_library::the_macro_library  the_io_library::the_io_library  a_json_library::a_json_library)
+target_link_libraries(a_sentence_chunker_library_shared PUBLIC  the_macro_library::the_macro_library  a_memory_library::a_memory_library  the_io_library::the_io_library  a_json_library::a_json_library)
 
 # Per-variant optimization flavor
 target_compile_options(a_sentence_chunker_library_shared PRIVATE ${_A_RELEASE_OPTS})
@@ -245,7 +245,7 @@ endif()
 
 set(A_BUILD_TARGET_BASENAME "a_sentence_chunker_library")
 set(A_BUILD_EXPORT_NAMESPACE "a_sentence_chunker_library")
-set(A_BUILD_DEPS "a_memory_library;the_macro_library;the_io_library;a_json_library")
+set(A_BUILD_DEPS "the_macro_library;a_memory_library;the_io_library;a_json_library")
 
 include(CMakePackageConfigHelpers)
 configure_package_config_file(
