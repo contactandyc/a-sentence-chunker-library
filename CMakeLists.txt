@@ -52,8 +52,11 @@ find_package(a_json_library CONFIG REQUIRED)
 
 # ---- Dependencies (PkgConfig Shims) ----
 
+
 # ── Library variants (ALL are defined & built/installed) ──────────────────────
-add_library(a_sentence_chunker_library_debug  src/a_sentence_chunker.c)
+
+add_library(a_sentence_chunker_library_debug STATIC
+  src/a_sentence_chunker.c)
 
 target_include_directories(a_sentence_chunker_library_debug PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
@@ -87,7 +90,9 @@ install(TARGETS a_sentence_chunker_library_debug EXPORT a_sentence_chunker_libra
   LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
   RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
   INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
-add_library(a_sentence_chunker_library_memory  src/a_sentence_chunker.c)
+
+add_library(a_sentence_chunker_library_memory STATIC
+  src/a_sentence_chunker.c)
 
 target_include_directories(a_sentence_chunker_library_memory PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
@@ -124,7 +129,9 @@ install(TARGETS a_sentence_chunker_library_memory EXPORT a_sentence_chunker_libr
   LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
   RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
   INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
-add_library(a_sentence_chunker_library_static  src/a_sentence_chunker.c)
+
+add_library(a_sentence_chunker_library_static STATIC
+  src/a_sentence_chunker.c)
 
 target_include_directories(a_sentence_chunker_library_static PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
@@ -158,7 +165,9 @@ install(TARGETS a_sentence_chunker_library_static EXPORT a_sentence_chunker_libr
   LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
   RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
   INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
-add_library(a_sentence_chunker_library_shared  src/a_sentence_chunker.c)
+
+add_library(a_sentence_chunker_library_shared SHARED
+  src/a_sentence_chunker.c)
 
 target_include_directories(a_sentence_chunker_library_shared PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
