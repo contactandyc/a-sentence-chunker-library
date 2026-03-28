@@ -1,7 +1,7 @@
 # BUILDING
 
 This project: **A Sentence Chunker Library**
-Version: **0.0.1**
+Version: **0.0.3**
 
 ## Local build
 

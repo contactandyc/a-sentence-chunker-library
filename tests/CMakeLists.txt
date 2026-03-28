@@ -17,11 +17,27 @@ option(A_ENABLE_COVERAGE "Enable code coverage instrumentation" OFF)
 
 find_library(M_LIB m)
 
-# ---- Test executables ----
-set(TEST_EXECUTABLES "")
-add_executable(chunker  src/chunker.c)
+find_package(the_macro_library CONFIG REQUIRED)
+find_package(a_memory_library CONFIG REQUIRED)
+find_package(the_io_library CONFIG REQUIRED)
+find_package(a_json_library CONFIG REQUIRED)
 
-target_include_directories(chunker PRIVATE  ${CMAKE_CURRENT_SOURCE_DIR}/src)
+# Fallback for standalone test builds (when not included via add_subdirectory)
+if(NOT TARGET a_sentence_chunker_library::a_sentence_chunker_library)
+  find_package(a_sentence_chunker_library CONFIG REQUIRED)
+endif()
+
+set(TEST_EXECUTABLES "")
+
+# ---- Targets ----
+add_executable(chunker
+  src/chunker.c
+)
+
+target_include_directories(chunker PRIVATE
+  ${CMAKE_CURRENT_SOURCE_DIR}/../src
+  ${CMAKE_CURRENT_SOURCE_DIR}/src
+)
 
 list(APPEND TEST_EXECUTABLES chunker)
 
@@ -36,9 +52,10 @@ if("CXX" IN_LIST CMAKE_PROJECT_LANGUAGES)
   )
 endif()
 
-if(NOT TARGET a_sentence_chunker_library::a_sentence_chunker_library)
-  find_package(a_sentence_chunker_library CONFIG REQUIRED)
-endif()
+target_link_libraries(chunker PRIVATE the_macro_library::the_macro_library)
+target_link_libraries(chunker PRIVATE a_memory_library::a_memory_library)
+target_link_libraries(chunker PRIVATE the_io_library::the_io_library)
+target_link_libraries(chunker PRIVATE a_json_library::a_json_library)
 target_link_libraries(chunker PRIVATE a_sentence_chunker_library::a_sentence_chunker_library)
 
 if(M_LIB)
