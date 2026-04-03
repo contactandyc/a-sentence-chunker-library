@@ -1,9 +1,5 @@
 project_title: A Sentence Chunker Library
-<<<<<<< HEAD
 version: 0.0.2
-=======
-version: 0.0.2
->>>>>>> 8f8f692 (chore: bump version to 0.0.2)
 stack: c/cmake
 date_created: 2024-01-01
 profile: default-knode
