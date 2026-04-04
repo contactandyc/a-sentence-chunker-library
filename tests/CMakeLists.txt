@@ -44,13 +44,9 @@ list(APPEND TEST_EXECUTABLES chunker)
 set_target_properties(chunker PROPERTIES
   C_STANDARD 23
   C_STANDARD_REQUIRED YES
+  CXX_STANDARD 17
+  CXX_STANDARD_REQUIRED YES
 )
-if("CXX" IN_LIST CMAKE_PROJECT_LANGUAGES)
-  set_target_properties(chunker PROPERTIES
-    CXX_STANDARD 17
-    CXX_STANDARD_REQUIRED YES
-  )
-endif()
 
 target_link_libraries(chunker PRIVATE the_macro_library::the_macro_library)
 target_link_libraries(chunker PRIVATE a_memory_library::a_memory_library)
