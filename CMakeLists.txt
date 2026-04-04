@@ -8,7 +8,7 @@
 cmake_minimum_required(VERSION 3.20)
 
 project(a_sentence_chunker_library
-  VERSION 0.0.6
+  VERSION 0.0.7
   LANGUAGES C
 )
 # ── Variant selection for the umbrella alias ──────────────────────────────────
