@@ -1,5 +1,5 @@
 project_title: A Sentence Chunker Library
-version: 0.0.5
+version: 0.0.6
 stack: c/cmake
 date_created: 2024-01-01
 profile: default-knode
