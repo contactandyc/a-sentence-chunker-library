@@ -9,6 +9,11 @@ cmake_minimum_required(VERSION 3.20)
 
 project(a_sentence_chunker_library_tests LANGUAGES C)
 
+if(CMAKE_PREFIX_PATH)
+  include_directories("${CMAKE_PREFIX_PATH}/include")
+  link_directories("${CMAKE_PREFIX_PATH}/lib")
+endif()
+
 set(A_BUILD_VARIANT "debug" CACHE STRING
     "Variant to link via a_sentence_chunker_library::a_sentence_chunker_library (debug|memory|static|shared)")
 set_property(CACHE A_BUILD_VARIANT PROPERTY STRINGS debug memory static shared)
@@ -30,12 +35,17 @@ endif()
 set(TEST_EXECUTABLES "")
 
 # ---- Targets ----
+# ==============================================================================
+# chunker Target (Standard Test)
+# ==============================================================================
 add_executable(chunker
   src/chunker.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../src/a_sentence_chunker.c
 )
 
 target_include_directories(chunker PRIVATE
   ${CMAKE_CURRENT_SOURCE_DIR}/../src
+  ${CMAKE_CURRENT_SOURCE_DIR}/../include
   ${CMAKE_CURRENT_SOURCE_DIR}/src
 )
 
