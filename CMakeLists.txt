@@ -8,7 +8,7 @@
 cmake_minimum_required(VERSION 3.20)
 
 project(a_sentence_chunker_library
-  VERSION 0.0.12
+  VERSION 0.0.13
   LANGUAGES C
 )
 
